@@ -1,4 +1,4 @@
-#Poc Big Data
+# Poc Big Data
 
 This stack is a classic integration of data:
 1. Events are received by Kafka
