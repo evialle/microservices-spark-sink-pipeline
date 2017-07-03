@@ -1,5 +1,7 @@
 # Created by .ignore support plugin (hsz.mobi)
-/spark-examples/.project
+/infrastructure/.project
 /.idea/
 .gitignore
 .idea/
+*.iml
+.project

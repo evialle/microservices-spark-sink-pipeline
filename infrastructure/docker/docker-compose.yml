@@ -8,9 +8,10 @@ services:
       - 2181:2181
 
   kafka:
-    image: wurstmeister/kafka
+    image: wurstmeister/kafka:latest
     ports:
       - 9092:9092
+      - 7203:7203
     links:
       - zookeeper-kafka
     environment:
@@ -23,6 +24,10 @@ services:
       - KAFKA_GROUP_MAX_SESSION_TIMEOUT_MS=60000
       - KAFKA_NUM_PARTITIONS=2
       - KAFKA_DELETE_RETENTION_MS=1000
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    volumes:
+      - ./volumes/kafka/data:/data
+      - ./volumes/kafka/logs:/logs
 
   kafka-manager:
     image: sheepkiller/kafka-manager:latest
@@ -37,6 +42,7 @@ services:
       ZK_HOSTS: zookeeper-kafka:2181
       APPLICATION_SECRET: letmein
       KM_ARGS: -Djava.net.preferIPv4Stack=true
+
 
   spark-master:
       build:
@@ -63,15 +69,13 @@ services:
         - 7077:7077
         - 8080:8080
       volumes:
-        - ./conf/spark-master:/conf
-        - ./data:/tmp/data
+        - ./volumes/spark/conf/spark-master:/conf
+        - ./volumes/spark/data:/tmp/data
 
   spark-worker:
       image: spark-2:dev
       command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
       hostname: spark-worker
-      deploy:
-        replicas: 2
       environment:
         SPARK_CONF_DIR: /conf
         SPARK_PUBLIC_DNS: 127.0.0.1
@@ -89,5 +93,38 @@ services:
         - 7016
         - 8881
       volumes:
-        - ./conf/spark-worker:/conf
-        - ./data:/tmp/data
+        - ./volumes/spark/conf/spark-worker:/conf
+        - ./volumes/spark/data:/tmp/data
+
+  cassandra-master:
+    image: cassandra:latest
+    container_name: cassandra-master
+    ports:
+      - 9042:9042
+      - 7199:7199
+    volumes:
+      - ./volumes/cassandra-master/data:/var/lib/cassandra
+
+  cassandra-seed:
+    image: cassandra:latest
+    container_name: cassandra-seed
+    ports:
+      - 9142:9042
+    links:
+      - cassandra-master:seed
+    environment:
+      - CASSANDRA_SEEDS=seed
+    volumes:
+      - ./volumes/cassandra-seed/data:/var/lib/cassandra
+
+  zeppelin:
+    image: xemuliam/zeppelin:latest
+    container_name: zeppelin
+    ports:
+      - 8081:8080
+    expose:
+      - 8080
+      - 7077
+      - 4040
+    links:
+      - cassandra-master

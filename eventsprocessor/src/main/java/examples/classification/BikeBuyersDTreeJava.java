@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples.classification;
+package main.java.examples.classification;
 
 import static examples.PrintUtils.printMetrics;
 import static examples.classification.Stats.confusionMatrix;
@@ -24,13 +24,13 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics;
 import org.apache.spark.mllib.regression.LabeledPoint;
-import org.apache.spark.mllib.tree.RandomForest;
-import org.apache.spark.mllib.tree.model.RandomForestModel;
+import org.apache.spark.mllib.tree.DecisionTree;
+import org.apache.spark.mllib.tree.model.DecisionTreeModel;
 import org.apache.spark.sql.SparkSession;
 
 import scala.Tuple2;
 
-public class BikeBuyersRForestJava {
+public class BikeBuyersDTreeJava {
 
 	public static void main(String[] args) {
 		
@@ -39,7 +39,7 @@ public class BikeBuyersRForestJava {
 		SparkSession spark = SparkSession
 			.builder()
 			.master("local[*]")
-			.appName("Classification of Bike Buyers with RandomForest in Java 8")
+			.appName("Classification of Bike Buyers with DecisionTree in Java 8")
 			.getOrCreate();
 		
 		try (JavaSparkContext sc = new JavaSparkContext(spark.sparkContext())) {
@@ -51,21 +51,19 @@ public class BikeBuyersRForestJava {
 			JavaRDD<LabeledPoint> test = split[1].cache();
 
 			Integer numClasses = 2;
-		    Integer numTrees = 10;
-		    String featureSubsetStrategy = "auto";
 			String impurity = "entropy";
 			Integer maxDepth = 20;
 			Integer maxBins = 34;
-			Integer seed = 102059;
 
-			final RandomForestModel model = RandomForest.trainClassifier(train, numClasses, BikeBuyerModelJava.categoricalFeaturesInfo(), numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins, seed);
+			final DecisionTreeModel dtree = DecisionTree.trainClassifier(train, numClasses,
+					BikeBuyerModelJava.categoricalFeaturesInfo(), impurity, maxDepth, maxBins);
 
 		    test.take(5).forEach(x -> {
-		    	System.out.println(String.format("Predicted: %.1f, Label: %.1f", model.predict(x.features()), x.label()));	
+		    	System.out.println(String.format("Predicted: %.1f, Label: %.1f", dtree.predict(x.features()), x.label()));	
 		    });
 
 		    JavaPairRDD<Object, Object> predictionsAndLabels = test.mapToPair(
-				p -> new Tuple2<Object, Object>(model.predict(p.features()), p.label())
+		    	p -> new Tuple2<Object, Object>(dtree.predict(p.features()), p.label())
 		    );
 			
 		    Stats stats = Stats.apply(confusionMatrix(predictionsAndLabels.rdd()));

@@ -1,4 +1,4 @@
-package examples.regression;
+package main.java.examples.regression;
 
 import java.util.Collections;
 
