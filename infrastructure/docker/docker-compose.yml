@@ -2,45 +2,48 @@ version: '3.0'
 
 services:
 
-  zookeeper-kafka:
-    image: confluent/zookeeper:latest
+  kafka:
+    image: spotify/kafkaproxy:latest
     ports:
       - 2181:2181
-
-  kafka:
-    image: wurstmeister/kafka:latest
-    ports:
       - 9092:9092
       - 7203:7203
-    links:
-      - zookeeper-kafka
+      - 80:80
+    expose:
+      - 2181
+      - 9092
+      - 7203
+      - 80
     environment:
-      KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_LOG_RETENTION_HOURS: 1
-      KAFKA_MESSAGE_MAX_BYTES: 10000000
-      KAFKA_REPLICA_FETCH_MAX_BYTES: 10000000
-      KAFKA_GROUP_MAX_SESSION_TIMEOUT_MS: 60000
-      KAFKA_NUM_PARTITIONS: 2
-      KAFKA_DELETE_RETENTION_MS: 1000
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      ADVERTISED_HOST: localhost
+      ADVERTISED_PORT: 9092
+      CONSUMER_THREADS: 1
+      TOPICS: myTopic,some-other-topic
+      ZK_CONNECT: kafka7zookeeper:2181/root/path
+      GROUP_ID: mymirror
     volumes:
-      - ./volumes/kafka/data:/data
-      - ./volumes/kafka/logs:/logs
+      - ./volumes/kafka/:/kafka
+
+  kafka-topics-ui:
+    image: landoop/kafka-topics-ui
+    links:
+      - kafka
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+
+    environment:
+      KAFKA_REST_PROXY_URL: http://kafka
 
   kafka-manager:
     image: sheepkiller/kafka-manager:latest
     links:
-      - zookeeper-kafka:zk
-      - kafka
+      - kafka:zk
     expose:
       - 9000
     ports:
       - 9000:9000
-    environment:
-      ZK_HOSTS: zookeeper-kafka:2181
-      APPLICATION_SECRET: letmein
-      KM_ARGS: -Djava.net.preferIPv4Stack=true
 
 
   spark-master:
@@ -62,11 +65,12 @@ services:
         - 7006
         - 7077
         - 6066
+        - 8080
       ports:
         - 4040:4040
         - 6066:6066
         - 7077:7077
-        - 8080:8080
+        - 8080:8088
       volumes:
         - ./volumes/spark/conf/spark-master:/conf
         - ./volumes/spark/data:/tmp/data
@@ -78,7 +82,7 @@ services:
       environment:
         SPARK_CONF_DIR: /conf
         SPARK_PUBLIC_DNS: 127.0.0.1
-        SPARK_WORKER_CORES: 2
+        SPARK_WORKER_CORES: 1
         SPARK_WORKER_MEMORY: 1g
         SPARK_WORKER_PORT: 8881
         SPARK_WORKER_WEBUI_PORT: 8081

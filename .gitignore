@@ -8,3 +8,5 @@
 infrastructure/docker/volumes/cassandra-master/
 infrastructure/docker/volumes/cassandra-seed/data/commitlog/*
 infrastructure/docker/volumes/cassandra-seed/data/data/*
+/eventsprocessor/target/
+/eventsprocessor/project/
