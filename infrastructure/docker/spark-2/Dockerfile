@@ -1,10 +1,9 @@
-FROM openjdk:8u131-jdk
-
+FROM openjdk:8u151-jdk
 # SPARK
-ARG SPARK_ARCHIVE=https://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz
+ARG SPARK_ARCHIVE=https://www.apache.org/dyn/closer.lua/spark/spark-2.2.1/spark-2.2.1-bin-hadoop2.7.tgz
 RUN curl -s $SPARK_ARCHIVE | tar -xz -C /usr/local/
 
-ENV SPARK_HOME /usr/local/spark-2.1.1-bin-hadoop2.7
+ENV SPARK_HOME /usr/local/spark-2.2.1-bin-hadoop2.7
 ENV PATH $PATH:$SPARK_HOME/bin
 
 # for High-availability like zoo-keeper's leader election
